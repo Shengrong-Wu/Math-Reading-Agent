@@ -1,0 +1,8 @@
+streamlit>=1.42
+requests>=2.32
+PyMuPDF>=1.24
+beautifulsoup4>=4.12
+markdown>=3.6
+Pillow>=10.4
+matplotlib>=3.9
+numpy>=2.0

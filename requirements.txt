@@ -1,0 +1,1 @@
+-r geometric_math_reader_app/requirements.txt
