@@ -36,7 +36,7 @@ streamlit run streamlit_app.py
 
 ## Usage
 
-1. Open the app in your browser.
+1. Open the the [app](https://math-reading-agent.streamlit.app/) in your browser.
 2. Choose an input source:
    - upload a PDF, `.tex`, `.md`, or `.txt` file
    - or paste a paper URL
