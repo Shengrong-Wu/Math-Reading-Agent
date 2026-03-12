@@ -22,6 +22,39 @@ from math_reader import (
 APP_DIR = Path(__file__).resolve().parent
 
 
+# ---------------------------------------------------------------------------
+# Startup-speed helpers
+# ---------------------------------------------------------------------------
+
+@st.cache_data(ttl=30)
+def _cached_saved_runs(app_dir: Path) -> list[dict]:
+    """Scan the artifacts folder at most once every 30 s instead of on every rerun."""
+    return list_saved_runs(app_dir)
+
+
+# ---------------------------------------------------------------------------
+# Secrets helpers — pre-fill API keys from .streamlit/secrets.toml when present
+# ---------------------------------------------------------------------------
+
+_PROVIDER_SECRET_KEYS: dict[str, str] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
+}
+
+
+def _secret_for_provider(provider: str) -> str:
+    """Return the API key stored in st.secrets for *provider*, or '' if absent."""
+    secret_name = _PROVIDER_SECRET_KEYS.get(provider, "")
+    if not secret_name:
+        return ""
+    try:
+        return st.secrets.get(secret_name, "")  # type: ignore[return-value]
+    except Exception:
+        return ""
+
+
 st.set_page_config(
     page_title="Geometric Math Reader",
     layout="wide",
@@ -215,7 +248,7 @@ with st.sidebar:
 
     st.divider()
     st.header("Saved Reports")
-    saved_runs = list_saved_runs(APP_DIR)
+    saved_runs = _cached_saved_runs(APP_DIR)
     selected_saved_run = ""
     if saved_runs:
         saved_run_options = [str(item["run_dir"]) for item in saved_runs]
@@ -236,7 +269,7 @@ with st.sidebar:
     st.divider()
     st.header("Reasoning Provider")
     llm_provider = st.selectbox("LLM provider", options=LLM_PROVIDERS, format_func=str.title)
-    llm_api_key = st.text_input("LLM API key", type="password")
+    llm_api_key = st.text_input("LLM API key", type="password", value=_secret_for_provider(llm_provider))
     llm_base_url = ""
     if llm_provider in {"openai", "deepseek"}:
         llm_base_url = st.text_input("LLM base URL (optional)", placeholder="Leave blank for the official endpoint")
@@ -270,7 +303,7 @@ with st.sidebar:
         image_api_key = ""
         image_base_url = ""
     else:
-        default_image_key = llm_api_key if reuse_llm_key and image_provider == llm_provider else ""
+        default_image_key = llm_api_key if reuse_llm_key and image_provider == llm_provider else _secret_for_provider(image_provider)
         image_api_key = st.text_input("Image API key", type="password", value=default_image_key)
         image_base_url = ""
         if image_provider == "openai":
